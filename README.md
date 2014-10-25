@@ -1,10 +1,11 @@
 SSL-Badge
 =========
-[![SSL Rating](http://sslbadge.org/?domain=wellsfargo.com)](https://www.ssllabs.com/ssltest/analyze.html?d=wellsfargo.com)
 
 ### www.sslbadge.org
 
+
 SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as a badge.
+
 
 ### Grades
 
@@ -21,7 +22,7 @@ SSL-Badge is a service that displays your website's SSL/TLS rating (according to
 
 ### Usage
 
-Generate the markdown at [sslbadge.org](http://sslbadge.org).  Your badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) if its your first time requesting your domain's badge.  Github caches images in markdown pretty aggressively, so badge updates may be delayed.  Grades are recalculated every 24 hours at 3 am.  Clicking the badge opens a detailed report from Qualys Labs.
+Generate the markdown at [sslbadge.org](http://sslbadge.org).  Your badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) if its your first time requesting your domain's badge.  Github caches images in markdown pretty aggressively, so badge updates may be delayed a few minutes.  Grades are recalculated every 24 hours at 3 am.  Clicking the badge opens a detailed report from Qualys Labs.
 
 
 ### Why?
