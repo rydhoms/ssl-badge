@@ -1,12 +1,14 @@
 var MongoClient = require('mongodb').MongoClient;
+var express = require('express');
 var request = require('request');
 var cheerio = require('cheerio');
 var schedule = require('node-schedule');
-var express = require('express');
+var bodyParser = require('body-parser');
 
-var app = express();
-var port = 4333;
 var db;
+var port = 4333;
+var app = express();
+app.use(bodyParser.urlencoded({extended: true}));
 
 /* Connect to mongo, then start server */
 MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database) {
@@ -28,11 +30,11 @@ MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database
 
 // GET sslbadge.org/?domain=example.com
 app.get('/', function (req, res) {
-	var domain = req.query.domain;
+	var domain = req.param("domain");
 
 	// GET sslbadge.org/
 	if(!domain){
-		res.redirect("https://github.com/bergeron/SSL-Badge");
+		res.sendFile(__dirname + "/index.html");
 		return;
 	}
 
@@ -51,6 +53,13 @@ app.get('/', function (req, res) {
 			addDomain(domain);
 		}
 	});
+});
+
+/* Generate markdown */
+app.post('/generate', function (req, res) {
+	var domain = req.body.domain;
+	var md = "[![SSL Rating](http://sslbadge.org/?domain=" + domain + ")](https://www.ssllabs.com/ssltest/analyze.html?d=" + domain + ")";
+	res.send(md);
 });
 
 function serveBadge(res, grade){
