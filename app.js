@@ -4,6 +4,8 @@ var request = require('request');
 var cheerio = require('cheerio');
 var schedule = require('node-schedule');
 var bodyParser = require('body-parser');
+var crypto = require('crypto');
+var base64url = require('base64url');
 
 var db;
 var port = 4333;
@@ -64,20 +66,26 @@ app.post('/generate', function (req, res) {
 
 function serveBadge(res, grade){
 	var images = {
-		"A+": "http://img.shields.io/badge/SSL-A%2B-brightgreen.svg",
-		"A": "http://img.shields.io/badge/SSL-A-brightgreen.svg",
-		"A-": "http://img.shields.io/badge/SSL-A---brightgreen.svg",
-		"B": "http://img.shields.io/badge/SSL-B-orange.svg",
-		"C": "http://img.shields.io/badge/SSL-C-red.svg",
-		"F": "http://img.shields.io/badge/SSL-F-red.svg",
-		"M": "http://img.shields.io/badge/SSL-M-red.svg",
-		"T": "http://img.shields.io/badge/SSL-T-red.svg",
-		"Err": "http://img.shields.io/badge/SSL-Err-lightgrey.svg",
-		"Calculating": "http://img.shields.io/badge/SSL-Calculating-lightgrey.svg"
+		"A+": "/badges/aplus.svg",
+		"A": "/badges/a.svg",
+		"A-": "/badges/aminus.svg",
+		"B": "/badges/b.svg",
+		"C": "/badges/c.svg",
+		"F": "/badges/f.svg",
+		"M": "/badges/m.svg",
+		"T": "/badges/t.svg",
+		"Err": "/badges/err.svg",
+		"Calculating": "/badges/calculating.svg"
 	};
 
-	var url = images[grade] || images["Err"];
-	res.redirect(url);
+	var file = images[grade] || images["Err"];
+
+	/* PLEASE don't cache this */
+	res.setHeader('Etag', base64url(crypto.randomBytes(10)));
+	res.setHeader('Pragma', 'no-cache');
+	res.setHeader('Expires', 'Sun, 01 Jan 1984 00:00:00 GMT');
+	res.setHeader('Cache-Control', 'no-cache');
+	res.sendFile(__dirname + file);
 }
 
 
@@ -103,7 +111,7 @@ function testSSL(domain, callback){
 	/* Query every intervalSec seconds until grade is found or maxQueries reached */
 	(function query(iteration){
 		if(iteration < maxQueries){
-			/* 	Curried because we want setTimeout to make the recursive call,
+			/* 	Wrapped in fn because we want setTimeout to make the recursive call,
 				not pass setTimeout an evaluated function */
 			var timer = setTimeout(function(){query(iteration+1);}, intervalSec * 1000);
 		}
