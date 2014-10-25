@@ -3,8 +3,6 @@ SSL-Badge
 
 ### www.sslbadge.org
 
-[![SSL Rating](http://sslbadge.org/?domain=google.com)](https://www.ssllabs.com/ssltest/analyze.html?d=ephemeral.pw)
-
 SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as a badge.
 
 
