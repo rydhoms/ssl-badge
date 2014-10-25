@@ -6,7 +6,8 @@ var app = express();
 var db;
 
 
-/* Connect to mongo */
+/* Connect to mongo, then start server */
+var port = 4333;
 MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database) {
 	if(err) {
 		console.log("Cannot connect to db.");
@@ -14,7 +15,7 @@ MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database
 	} else {
 		console.log("Connected to db.");
 		db = database;
-		runServer();
+		app.listen(port);
 	}
 });
 
@@ -36,13 +37,12 @@ app.get('/', function (req, res) {
 			res.sendStatus(400); //TODO not this
 		} else if(items.length > 1){
 			console.log("Found more than 1 record for: " + domain);
-			res.send("wtf");	// TODO wtf
+			serveBadge(res, items[0].grade);
 		} else if(items.length == 1){	/* We have a record for this domain */
 			serveBadge(res, items[0].grade);
 		} else { /* New domain */
-			addDomain(domain, function(grade){
-				serveBadge(res, grade);
-			});
+			serveBadge(res, "Calculating");
+			addDomain(domain);
 		}
 	});
 });
@@ -50,28 +50,37 @@ app.get('/', function (req, res) {
 
 
 function serveBadge(res, grade){
-	res.send(grade);
+
+	var images = {
+		"A+": "http://img.shields.io/badge/SSL-A%2B-brightgreen.svg",
+		"A": "http://img.shields.io/badge/SSL-A-brightgreen.svg",
+		"A-": "http://img.shields.io/badge/SSL-A---brightgreen.svg",
+		"B": "http://img.shields.io/badge/SSL-B-orange.svg",
+		"C": "http://img.shields.io/badge/SSL-C-red.svg",
+		"F": "http://img.shields.io/badge/SSL-F-red.svg",
+		"M": "http://img.shields.io/badge/SSL-M-red.svg",
+		"T": "http://img.shields.io/badge/SSL-T-red.svg",
+		"Err": "http://img.shields.io/badge/SSL-Err-lightgrey.svg",
+		"Calculating": "http://img.shields.io/badge/SSL-Calculating-lightgrey.svg"
+	};
+
+	var url = images[grade];
+	if(!url){
+		url = images['Err'];
+	}
+	res.redirect(url);
 }
 
 
-/* 	Called when new domain is seen. Grade is found, domain is added to db,
-	and fn is called with grade.
+/* 
 */
 function addDomain(domain, fn){
 
-	/* Get its grade */
+	db.collection('domains').insert({"domain": domain, "grade": "Calculating"}, function(err, result) {});
+
+	/* Find & set its grade */
 	testSSL(domain, function(grade){
-
-		fn(grade);
-
-		/* If record already exists (another thread added this domain before we got here), dont double add it */
-		db.collection('domains').find({"domain": domain}).toArray(function(err, items) {
-			if(items.length == 0){
-				db.collection('domains').insert({"domain": domain, "grade": grade}, function(err, result) {});
-			} else {
-				console.log(domain + " already has a record");
-			}
-		});
+		db.collection('domains').update({"domain": domain},{$set: {"grade": grade}}, function(err, result){});
 	});
 }
 
@@ -149,8 +158,4 @@ function parseGrade(html){
 		no SSL/TLS support, invalid certificate) */
 	return {'status': 2, data: "Err"};
 	
-}
-
-function runServer(){
-	app.listen(4333);
 }
