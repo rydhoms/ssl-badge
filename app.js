@@ -8,7 +8,6 @@ var app = express();
 var port = 4333;
 var db;
 
-
 /* Connect to mongo, then start server */
 MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database) {
 	if(err) {
@@ -18,6 +17,11 @@ MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database
 		console.log("Connected to db.");
 		db = database;
 		app.listen(port);
+
+		/* Re-grade every 24 hours @ 3am */
+		var updater = new schedule.RecurrenceRule();
+		updater.hour = 3;
+		schedule.scheduleJob(updater, updateGrades);
 	}
 });
 
@@ -49,8 +53,6 @@ app.get('/', function (req, res) {
 	});
 });
 
-
-
 function serveBadge(res, grade){
 	var images = {
 		"A+": "http://img.shields.io/badge/SSL-A%2B-brightgreen.svg",
@@ -70,18 +72,15 @@ function serveBadge(res, grade){
 }
 
 
-/* 
-*/
-function addDomain(domain, fn){
+/* Add new domain to database and find/set its grade */
+function addDomain(domain){
 
 	db.collection('domains').insert({"domain": domain, "grade": "Calculating"}, function(err, result) {});
 
-	/* Find & set its grade */
 	testSSL(domain, function(grade){
 		db.collection('domains').update({"domain": domain},{$set: {"grade": grade}}, function(err, result){});
 	});
 }
-
 
 /* 	Queries qualys.com SSL checker until grade is calculated.
 	(domain, <callback(grade)>)
@@ -153,7 +152,17 @@ function parseGrade(html){
 		return {'status': 1, data: "waiting"};
 	}
 
-	/* SSL test failed (invalid domain name, unable to connect to server, 
+	/* 	SSL test failed (invalid domain name, unable to connect to server, 
 		no SSL/TLS support, invalid certificate) */
 	return {'status': 2, data: "Err"};
+}
+
+function updateGrades(){
+	db.collection('domains').find({}).toArray(function(err, items){
+		items.forEach(function(d){
+			testSSL(d.domain, function(grade){
+				db.collection('domains').update({"domain": d.domain},{$set: {"grade": grade}}, function(err, result){});
+			});
+		});
+	});
 }
