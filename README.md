@@ -22,7 +22,7 @@ SSL-Badge is a service that displays your website's SSL/TLS rating (according to
 
 ### Usage
 
-Generate the markdown at [sslbadge.org](http://sslbadge.org).  Your badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) if its your first time requesting your domain's badge.  Github aggressively caches images in markdown, so badge updates may be delayed a few minutes.  Grades are recalculated every 24 hours at 3 am.  Clicking the badge opens a detailed report from Qualys Labs.
+Generate the markdown at [sslbadge.org](http://sslbadge.org).  Your badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) if its your first time requesting your domain's badge.  Github aggressively caches images in markdown, so badge updates may be delayed a few minutes.  Grades are recalculated every 24 hours at 3 am EST.  Clicking the badge opens a detailed report from Qualys Labs.
 
 
 ### Why?
