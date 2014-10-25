@@ -1,13 +1,15 @@
 var MongoClient = require('mongodb').MongoClient;
 var request = require('request');
 var cheerio = require('cheerio');
+var schedule = require('node-schedule');
 var express = require('express');
+
 var app = express();
+var port = 4333;
 var db;
 
 
 /* Connect to mongo, then start server */
-var port = 4333;
 MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database) {
 	if(err) {
 		console.log("Cannot connect to db.");
@@ -30,15 +32,15 @@ app.get('/', function (req, res) {
 		return;
 	}
 
-	/* Do we have a record for this domain? */
+	/* Do we have a grade for this domain? */
 	db.collection('domains').find({"domain": domain}).toArray(function(err, items) {
 		if(err){
 			console.log("Error looking up domain: " + domain);
-			res.sendStatus(400); //TODO not this
+			serveBadge(res, "Err");
 		} else if(items.length > 1){
 			console.log("Found more than 1 record for: " + domain);
 			serveBadge(res, items[0].grade);
-		} else if(items.length == 1){	/* We have a record for this domain */
+		} else if(items.length == 1){	/* We have a grade for this domain */
 			serveBadge(res, items[0].grade);
 		} else { /* New domain */
 			serveBadge(res, "Calculating");
@@ -50,7 +52,6 @@ app.get('/', function (req, res) {
 
 
 function serveBadge(res, grade){
-
 	var images = {
 		"A+": "http://img.shields.io/badge/SSL-A%2B-brightgreen.svg",
 		"A": "http://img.shields.io/badge/SSL-A-brightgreen.svg",
@@ -64,10 +65,7 @@ function serveBadge(res, grade){
 		"Calculating": "http://img.shields.io/badge/SSL-Calculating-lightgrey.svg"
 	};
 
-	var url = images[grade];
-	if(!url){
-		url = images['Err'];
-	}
+	var url = images[grade] || images["Err"];
 	res.redirect(url);
 }
 
@@ -85,48 +83,49 @@ function addDomain(domain, fn){
 }
 
 
-/* 	Queries qualys.com SSL checker every intervalMillis until grade is found.
-	fn is then called with grade 	*/
-function testSSL(domain, fn){
+/* 	Queries qualys.com SSL checker until grade is calculated.
+	(domain, <callback(grade)>)
+*/
+function testSSL(domain, callback){
 
+	var intervalSec = 7;
+	var maxQueries = 30;
 	var url = 'https://www.ssllabs.com/ssltest/clearCache.html?ignoreMismatch=on&d=' + domain;
-	var iterations = 0;
-	var checkStatus = function(){
 
-		/* Don't try for > 5 minutes (300s) */
-		var elapsedTimeSec = (iterations++ * intervalMillis) / 1000;
-		if(elapsedTimeSec > 300){
-			clearInterval(timer);
-			fn("Err");
-			return;
+	/* Query every intervalSec seconds until grade is found or maxQueries reached */
+	(function query(iteration){
+		if(iteration < maxQueries){
+			/* 	Curried because we want setTimeout to make the recursive call,
+				not pass setTimeout an evaluated function */
+			var timer = setTimeout(function(){query(iteration+1);}, intervalSec * 1000);
 		}
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				var result = parseGrade(body);
+				console.log(result);
 
-				if(result.status == 0){		/* New URL */
+				if(result.status == 0){		/* Update URL */
 					url = result.data;
-				} else if(result.status == 1){	/* Waiting */
-					/* Waiting... */
+				} else if(result.status == 1){	/* Test still running */
+					return;
 				} else if(result.status == 2){	/* Grade found */
-					clearInterval(timer);
+					clearTimeout(timer);
 					var grade = result.data;
-					fn(grade);
+					callback(grade);
 				}
-		  	}
+			} else {
+				console.log(error);
+			}
 		});
-	};
+	})(0);
 
-	var intervalMillis = 10000;
-	checkStatus(); /* Do it once before waiting intervalMillis */
-	var timer = setInterval(checkStatus, intervalMillis);
 }
 
 
 /* 	Scrapes html to find grade
 	Returns: {status: int, data: string}
- 	Codes: 	0 => Change URL (if Qualys finds multiple servers). data contains the new URL.
+	Codes: 		0 => Update URL (if Qualys finds multiple servers). data contains the new URL.
 			1 => Waiting for test to run. data == "waiting".
 			2 => Grade found. data contains the grade.
 */
@@ -157,5 +156,4 @@ function parseGrade(html){
 	/* SSL test failed (invalid domain name, unable to connect to server, 
 		no SSL/TLS support, invalid certificate) */
 	return {'status': 2, data: "Err"};
-	
 }
