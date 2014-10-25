@@ -1,5 +1,6 @@
 SSL-Badge
 =========
+[![SSL Rating](http://sslbadge.org/?domain=wellsfargo.com)](https://www.ssllabs.com/ssltest/analyze.html?d=wellsfargo.com)
 
 ### www.sslbadge.org
 
