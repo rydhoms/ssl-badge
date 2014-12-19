@@ -106,7 +106,7 @@ function testSSL(domain, callback){
 
 	var intervalSec = 7;
 	var maxQueries = 30;
-	var url = 'https://www.ssllabs.com/ssltest/clearCache.html?ignoreMismatch=on&d=' + domain;
+	var url = 'https://www.ssllabs.com/ssltest/analyze.html?d=' + domain;
 
 	/* Query every intervalSec seconds until grade is found or maxQueries reached */
 	(function query(iteration){
