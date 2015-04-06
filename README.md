@@ -3,6 +3,7 @@ SSL-Badge
 
 ### www.sslbadge.org
 
+
 SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as a badge.
 
 
@@ -21,9 +22,14 @@ SSL-Badge is a service that displays your website's SSL/TLS rating (according to
 
 ### Usage
 
-Generate the markdown at [sslbadge.org](http://sslbadge.org).  Your badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) if its your first time requesting your domain's badge. Grades are recalculated every 24 hours at 3 am EST.  Clicking the badge opens a detailed report from Qualys Labs.
+Generate the markdown at [sslbadge.org](http://sslbadge.org), or use the following markdown, replacing both example.com's with your domain name:
+
+`[![SSL Rating](http://sslbadge.org/?domain=example.com)](https://www.ssllabs.com/ssltest/analyze.html?d=example.com)`
+
+
+The badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) upon initial request.  Clicking the badge opens a detailed report from Qualys Labs.  Grades are recalculated every 24 hours at 3 am EST.  GitHub replicates and caches images in markdown, so badges may be slow to update (even though the headers are set to disable caching).
 
 
 ### Why?
 
-Certificates expire, server configurations change, and protocols become insecure. SSL-Badge helps you keep an eye on security without explicitly retesting your SSL/TLS configuration.
+Certificates expire, server configurations change, and protocols become insecure. SSL-Badge helps you keep an eye on the security of your SSL/TLS configuration.
