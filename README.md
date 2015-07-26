@@ -36,6 +36,6 @@ Certificates expire, server configurations change, and protocols become insecure
 
 ### To Run
 
-```npm init```
+```npm install```
 
 ```node app.js```
