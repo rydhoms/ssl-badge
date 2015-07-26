@@ -4,8 +4,9 @@ var request = require('request');
 var cheerio = require('cheerio');
 var schedule = require('node-schedule');
 var bodyParser = require('body-parser');
+
 var crypto = require('crypto');
-var base64url = require('base64url');
+var querystring = require('querystring');
 
 var db;
 var port = 4333;
@@ -32,11 +33,11 @@ MongoClient.connect("mongodb://localhost:27017/sslbadge", function(err, database
 
 // GET sslbadge.org/?domain=example.com
 app.get('/', function (req, res) {
-	var domain = req.param("domain");
+	var domain = req.query.domain;
 
 	// GET sslbadge.org/
 	if(!domain){
-		res.sendFile(__dirname + "/index.html");
+		res.sendFile(__dirname + '/index.html');
 		return;
 	}
 
@@ -81,7 +82,7 @@ function serveBadge(res, grade){
 	var file = images[grade] || images["Err"];
 
 	/* PLEASE don't cache this */
-	res.setHeader('Etag', base64url(crypto.randomBytes(10)));
+	res.setHeader('Etag', crypto.randomBytes(10).toString('hex'));
 	res.setHeader('Pragma', 'no-cache');
 	res.setHeader('Expires', 'Sun, 01 Jan 1984 00:00:00 GMT');
 	res.setHeader('Cache-Control', 'no-cache');
@@ -94,90 +95,52 @@ function addDomain(domain){
 
 	db.collection('domains').insert({"domain": domain, "grade": "Calculating"}, function(err, result) {});
 
-	testSSL(domain, function(grade){
+	testSSL(domain, 0, function(grade){
 		db.collection('domains').update({"domain": domain},{$set: {"grade": grade}}, function(err, result){});
 	});
 }
 
-/* 	Queries qualys.com SSL checker until grade is calculated.
+/* 	Queries SSL Labs API until grade is calculated.
 	(domain, <callback(grade)>)
 */
-function testSSL(domain, callback){
+function testSSL(domain, iter, callback){
 
-	var intervalSec = 7;
-	var maxQueries = 30;
-	var url = 'https://www.ssllabs.com/ssltest/analyze.html?d=' + domain;
+	if(iter > maxPolls){
+		return;
+	}
 
-	/* Query every intervalSec seconds until grade is found or maxQueries reached */
-	(function query(iteration){
-		if(iteration < maxQueries){
-			/* 	Wrapped in fn because we want setTimeout to make the recursive call,
-				not pass setTimeout an evaluated function */
-			var timer = setTimeout(function(){query(iteration+1);}, intervalSec * 1000);
-		}
+	var pollIntervalMs = 10000;
+	var maxPolls = 40;
+	var endpoint = 'https://api.ssllabs.com/api/v2/analyze/?';
 
-		request(url, function (error, response, body) {
+	var req = {
+		'host': domain
+	}
+
+	var qs = endpoint + querystring.stringify(req);
+	console.log('GET ' + qs);
+
+	request(qs, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				var result = parseGrade(body);
-				console.log(result);
 
-				if(result.status == 0){		/* Update URL */
-					url = result.data;
-				} else if(result.status == 1){	/* Test still running */
-					return;
-				} else if(result.status == 2){	/* Grade found */
-					clearTimeout(timer);
-					var grade = result.data;
-					callback(grade);
+				var data = JSON.parse(body);
+
+				if(data.endpoints && data.endpoints[0] && data.endpoints[0].grade){
+					callback(data.endpoints[0].grade);
+				} else if(data.status == 'READY' || data.status == 'ERROR'){
+					callback('Err');
+				} else{
+					callback('Calculating');
+					setTimeout(function(){testSSL(domain, iter+1, callback);}, pollIntervalMs);
 				}
-			} else {
-				console.log(error);
 			}
 		});
-	})(0);
-
-}
-
-
-/* 	Scrapes html to find grade
-	Returns: {status: int, data: string}
-	Codes: 		0 => Update URL (if Qualys finds multiple servers). data contains the new URL.
-			1 => Waiting for test to run. data == "waiting".
-			2 => Grade found. data contains the grade.
-*/
-function parseGrade(html){
-	var $ = cheerio.load(html);
-
-	/* Is there a grade on the page yet? Could be in two places */
-	var grade1 = $('#rating').find("[class^='rating_']").find('span').html();
-	var grade2 = $('#rating').find("[class^='rating_']").html();
-
-	if(grade1){
-		return {'status': 2, 'data': grade1};
-	} else if(grade2){
-		return {'status': 2, 'data': grade2.replace(/[ |\r\n]/g,"")};	/* Delete spaces and '\r\n' */
-	}
-
-	/* Multiple servers found. Pick 1st */
-	var newURL = $('.ip').first().find('a').attr('href');
-	if(newURL){
-		return {'status': 0, 'data': 'https://www.ssllabs.com/ssltest/' + newURL};
-	}
-
-	/* Waiting for result */
-	if(html.indexOf("Please wait") >= 0){
-		return {'status': 1, data: "waiting"};
-	}
-
-	/* 	SSL test failed (invalid domain name, unable to connect to server, 
-		no SSL/TLS support, invalid certificate) */
-	return {'status': 2, data: "Err"};
 }
 
 function updateGrades(){
 	db.collection('domains').find({}).toArray(function(err, items){
 		items.forEach(function(d){
-			testSSL(d.domain, function(grade){
+			testSSL(d.domain, 0, function(grade){
 				db.collection('domains').update({"domain": d.domain},{$set: {"grade": grade}}, function(err, result){});
 			});
 		});
