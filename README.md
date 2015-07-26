@@ -33,3 +33,9 @@ The badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-li
 ### Why?
 
 Certificates expire, server configurations change, and protocols become insecure. SSL-Badge helps you keep an eye on the security of your SSL/TLS configuration.
+
+### To Run
+
+```npm init```
+
+```node app.js```
