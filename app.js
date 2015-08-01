@@ -1,7 +1,6 @@
 var MongoClient = require('mongodb').MongoClient;
 var express = require('express');
 var request = require('request');
-var cheerio = require('cheerio');
 var schedule = require('node-schedule');
 var bodyParser = require('body-parser');
 
