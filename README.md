@@ -1,10 +1,10 @@
 SSL-Badge
 =========
 
-### www.sslbadge.org
+[https://sslbadge.org](https://sslbadge.org)
 
 
-SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as a badge.
+SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as an svg badge.
 
 
 ### Grades
@@ -22,12 +22,12 @@ SSL-Badge is a service that displays your website's SSL/TLS rating (according to
 
 ### Usage
 
-Generate the markdown at [sslbadge.org](http://sslbadge.org), or use the following markdown, replacing both example.com's with your domain name:
+Generate the markdown at [sslbadge.org](https://sslbadge.org), or use the following markdown, replacing both example.com's with your domain name:
 
-`[![SSL Rating](http://sslbadge.org/?domain=example.com)](https://www.ssllabs.com/ssltest/analyze.html?d=example.com)`
+`[![SSL Rating](https://sslbadge.org/?domain=example.com)](https://www.ssllabs.com/ssltest/analyze.html?d=example.com)`
 
 
-The badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) upon initial request.  Clicking the badge opens a detailed report from Qualys Labs.  Grades are recalculated every 24 hours at 3 am EST.  GitHub replicates and caches images in markdown, so badges may be slow to update (even though the headers are set to disable caching).
+The badge will say ![Calculating](http://img.shields.io/badge/SSL-Calculating-lightgrey.svg) upon initial request.  Clicking the badge opens a detailed report from Qualys Labs.  Grades are recalculated every 24 hours at 3 am EST.  Headers are set to disable caching.
 
 
 ### Why?
