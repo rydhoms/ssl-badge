@@ -3,6 +3,8 @@ SSL-Badge
 
 [https://sslbadge.org](https://sslbadge.org)
 
+[![SSL Rating](https://sslbadge.org/?domain=sslbadge.org)](https://www.ssllabs.com/ssltest/analyze.html?d=sslbadge.org)
+
 
 SSL-Badge is a service that displays your website's SSL/TLS rating (according to [Qualys Labs](https://www.ssllabs.com/ssltest/)) as an svg badge.
 
