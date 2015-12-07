@@ -60,7 +60,7 @@ app.get('/', function (req, res) {
 /* Generate markdown */
 app.post('/generate', function (req, res) {
 	var domain = req.body.domain;
-	var md = "[![SSL Rating](http://sslbadge.org/?domain=" + domain + ")](https://www.ssllabs.com/ssltest/analyze.html?d=" + domain + ")";
+	var md = "[![SSL Rating](https://sslbadge.org/?domain=" + domain + ")](https://www.ssllabs.com/ssltest/analyze.html?d=" + domain + ")";
 	res.send(md);
 });
 
